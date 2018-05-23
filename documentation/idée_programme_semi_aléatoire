@@ -1,0 +1,36 @@
+fonction mainLivreHeures {
+	
+	Fichier xml;
+	Proportion Allprop; //Type qui contient toute 
+
+	//Autres fonctions qui permettent la création du début du XML, des références vers les pages, du calendrier.
+
+	Evangile(xml, Allprop.evangile); //Prend fichier xml et le modifie pour ajouter les evangiles
+
+	ObsecroTe(xml, Allprop.obsecroTe); //Prend fichier xml et le modifie pour ajouter l'ObsecroTe
+
+	HeuresVierge(xml, Allprop.vierge); //Prend fichier xml et le modifie pour ajouter les Heures de la Vierge
+	HeureCroix(xml, prop.croix); //Prend fichier xml et le modifie pour ajouter les Heures de la croix
+	HeureSaintEsprit(xml, prop.saintEsprit); //Prend fichier xml et le modifie pour ajouter les Heures du Saint-Esprit
+	HeureMorts(xml, prop.mort); //Prend fichier xml et le modifie pour ajouter les Heures des morts
+
+	Suffrage(xml, prop.suffrage); //Prend fichier xml et le modifie pour ajouter les Suffrages
+
+}
+
+
+Fonction Evangile(Fichier xml, Entier[] prop) {
+	
+	Pour chaque sous section {
+		Tant que prop n'est pas vide{
+			Entier aléa = Alea(min, max); //Aléatoire qui déterine le texte à récupérer.
+
+			Si (prop[sousSection][aléa] > 0) {
+
+				Regles(xml, aléa, prop); //ajouter le texte au xml avec les regles qui correspondent au textes
+			}
+		}
+	}
+}
+
+Puis similaire pour les autres fonctions
