@@ -10,4 +10,4 @@ Les explications du programme sont disponibles dans [le rapport du projet](../do
 
 # Informations complémentaires :
 
-Le programme necéssite le fichier TOC_Arsenal1194.XML, non disponible sur ce dépôt pour des raisons de droits.
+Le programme necéssite le fichier TOC_Arsenal1194.xml, non disponible sur ce dépôt pour des raisons de droits.
