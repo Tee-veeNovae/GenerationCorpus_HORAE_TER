@@ -205,17 +205,25 @@ class RecupTexte_impl implements RecupTexte_itf
 
 
 
-	public Texte_type getObsecroTe() {
+	public Texte_type getObsecroTe(int verset) {
 		//récupère l'intéralité de la prière Obsecro Te dans le fichier et la retourne
-
+		
 		try {
 			FileReader 		filereader 		= new FileReader(adresseRelativeRepTextesSources + "/autres_txt/obsecro_te.txt");
 			BufferedReader 	buffer 			= new BufferedReader(filereader);
 			String 			currentLine;
 			String 			contenu 		= "";
+			int 	line 		= 1;
+			boolean lineReached = false;
 
-			while ((currentLine = buffer.readLine()) != null) {
-				contenu = contenu + currentLine + "\n";
+			while ((currentLine = buffer.readLine()) != null && !lineReached) {
+				if (line != verset) {
+					++line;
+				}
+				else {
+					lineReached = true;
+					contenu = currentLine;
+				}
 			}
 
 			buffer.close();

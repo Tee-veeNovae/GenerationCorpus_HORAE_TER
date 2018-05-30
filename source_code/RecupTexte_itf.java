@@ -12,7 +12,7 @@ interface RecupTexte_itf {
 	public Texte_type getVersetParLongueur(int longueur);
 
 	// requête de la prière Obsecro Te, en intégralité
-	public Texte_type getObsecroTe();
+	public Texte_type getObsecroTe(int verset);
 
 	// requête de la prière Pater Nostre, en intégralité
 	public Texte_type getPaterNostre();

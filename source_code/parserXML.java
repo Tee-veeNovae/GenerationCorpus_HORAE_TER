@@ -40,6 +40,8 @@ class parserXML {
     //Objet qui permet de récupérer des textes en français
     private RecupTexte_itf txtRecup;
 
+    private Hashtable<String,String> abrChap;
+
     /****************************************************************************
     Constructeur, prend le nom du fichier XML à explorer et le nom du fichier XML
     ****************************************************************************/
@@ -72,6 +74,8 @@ class parserXML {
 		    pattern = Pattern.compile("\\s\\s+");
 
 		    txtRecup = new RecupTexte_impl();
+
+		    abrChap = genereHashtable();
 		
 		}catch(ParserConfigurationException e){
 			e.printStackTrace();
@@ -104,6 +108,8 @@ class parserXML {
 			explorationXML((Node)racine, (Node)documentWrite.getDocumentElement()); //Lancement d'une fonction récursive d'exploration
 			 
 			fw.close();
+
+			System.out.println("Corpus et xml en francais généré");
 		
 			transformer.transform(source, sortie);
 		}catch (TransformerException e) {
@@ -122,73 +128,76 @@ class parserXML {
 		NodeList temp2; 
 		int nbBaliseFilles = baliseFilles.getLength(); //Nombre de noeuds fils
 
-		for (int i = 0; i < nbBaliseFilles; ++i) { //Pour chaque noeud fils
-			
-			temp = documentWrite.importNode(baliseFilles.item(i), false); //Récupération du noeud fils n°i sans ses noeuds fils
-					
-			//Si le noeud est de type texte
-			if(temp.getNodeType() == Node.TEXT_NODE) {
+		//Pour ne pas analyser la partie description du document comme du texte
+		if (!baliseRead.getNodeName().equals("teiHeader")){
+			for (int i = 0; i < nbBaliseFilles; ++i) { //Pour chaque noeud fils
 				
-				
-				matcher = pattern.matcher(temp.getTextContent()); //On compare la RegExpr avec le contenu du noeud
-				//Si le noeud contient du texte
-				if(!matcher.matches()){
-					
-					//temp.setTextContent(String.valueOf(temp.getTextContent().length()) + " STARGATE");
-					System.out.println("//////////////////////////////////////////////////////////////////");
-					System.out.println(temp.getTextContent());
-					System.out.println("//////////////////////////////////////////////////////////////////");
-				
-
-					//Selon le type de noeud parent
-					switch(baliseRead.getNodeName()) {
-
-						case "hi":
-
-							temp.setTextContent(getHiTrad(temp.getTextContent())); //Récupère une pseudo traduction des types de texte en latin
+				temp = documentWrite.importNode(baliseFilles.item(i), false); //Récupération du noeud fils n°i sans ses noeuds fils
 						
-							break;
+				//Si le noeud est de type texte
+				if(temp.getNodeType() == Node.TEXT_NODE) {
+					
+					
+					matcher = pattern.matcher(temp.getTextContent()); //On compare la RegExpr avec le contenu du noeud
+					//Si le noeud contient du texte et qu'il n'est pas vide
+					if(!matcher.matches() && temp.getTextContent().length() != 0){
+					
 
-						case "s":
+						//Selon le type de noeud parent
+						switch(baliseRead.getNodeName()) {
 
-							if(baliseRead.hasAttributes()){ //Test sur les attributs
-								NamedNodeMap attributes = baliseRead.getAttributes(); // récupère liste des attributs
-								for(int j = 0; j < attributes.getLength(); ++j){
-									if(attributes.item(j).getNodeName() == "corresp"){ // si on a un attribut corresp
-										String val = attributes.item(j).getNodeValue(); // récupère valeur de l'attribut
+							case "hi":
 
-										//System.out.println(attributes.item(j).getNodeName()+" : "+attributes.item(j).getNodeValue());
-										temp.setTextContent(getTextCorresp(val));
+								temp.setTextContent(getHiTrad(temp.getTextContent().trim().replaceAll("\\s\\s+"," "))); //Récupère une pseudo traduction des types de texte en latin
+							
+								break;
+
+							case "s":
+
+								if(baliseRead.hasAttributes()){ //Test sur les attributs
+									NamedNodeMap attributes = baliseRead.getAttributes(); // récupère liste des attributs
+									
+									for(int j = 0; j < attributes.getLength(); ++j){
+										
+										if(attributes.item(j).getNodeName() == "corresp"){ // si on a un attribut corresp
+											String val = attributes.item(j).getNodeValue(); // récupère valeur de l'attribut
+
+											//System.out.println(attributes.item(j).getNodeName()+" : "+attributes.item(j).getNodeValue());
+											temp.setTextContent(getTextCorresp(val, temp.getTextContent().length()));
+										}
 									}
+
+								}else {
+
+									//Récupère un texte de la longueur de texte en latin
+									//trim et replaceAll permettent de supprimer les espaces en trop dans le texte récupéré
+									temp.setTextContent(txtRecup.getVersetParLongueur(temp.getTextContent().trim().replaceAll("\\s\\s+"," ").length(), 15).getContenu()); 
 								}
-							}else {
+
+								break;
+
+							default :
 								//Récupère un texte de la longueur de texte en latin
-								temp.setTextContent(txtRecup.getVersetParLongueur(temp.getTextContent().length(), 50).getContenu()); 
-							}
+								temp.setTextContent(txtRecup.getVersetParLongueur(temp.getTextContent().trim().replaceAll("\\s\\s+"," ").length(), 15).getContenu());
 
-							break;
+								break;
+						}
 
-						default :
-							//Récupère un texte de la longueur de texte en latin
-							temp.setTextContent(txtRecup.getVersetParLongueur(temp.getTextContent().length(), 50).getContenu());
-
-							break;
+						try{
+							fw.write(temp.getTextContent()); //On écrit dans le corpus le texte
+						}catch (IOException e){
+							e.printStackTrace();
+						}
 					}
-
-					try{
-						fw.write(temp.getTextContent()); //On écrit dans le corpus le texte
-					}catch (IOException e){
-						e.printStackTrace();
-					}
+					
 				}
 				
-			}
-			
-			//On ajoute le noeud dans le nouveau XML			
-			baliseWrite.appendChild(temp);
+				//On ajoute le noeud dans le nouveau XML			
+				baliseWrite.appendChild(temp);
 
-			temp2 = baliseWrite.getChildNodes();
-			explorationXML(baliseFilles.item(i), temp2.item(i)); //On continue l'exploration
+				temp2 = baliseWrite.getChildNodes();
+				explorationXML(baliseFilles.item(i), temp2.item(i)); //On continue l'exploration
+			}
 		}
 	}
 
@@ -196,7 +205,7 @@ class parserXML {
 	/**************************************************************************************************
 	Méthode qui récupère les données interressantes d'un attribut corresp et recherche le texte associé 
 	**************************************************************************************************/
-	public String getTextCorresp(String attributesValue){
+	public String getTextCorresp(String attributesValue, int textSize){
 		String typeText = "";
 		String chapitre = "";
 		String verset = "";
@@ -224,7 +233,7 @@ class parserXML {
 
 		//System.out.println(typeText + " " + chapitre + " " + verset);
 
-		texte = analyseCorresp(typeText, chapitre, verset);
+		texte = analyseCorresp(typeText, chapitre, verset, textSize);
 
 		return (texte);
 
@@ -235,74 +244,27 @@ class parserXML {
 	/***********************************************************************************
 	Méthode qui récupère du texte en fonction du type de texte, du chapitre et du verset
 	***********************************************************************************/
-	private String analyseCorresp(String typeText, String chapitre, String verset){
+	private String analyseCorresp(String typeText, String chapitre, String verset, int textSize){
 
-		String nomFichier;
-		Scanner scan;
-		int num = 0;
-		String result = "STARGATE";
+		String result = "";
 
-		switch(typeText){
+		if (abrChap.containsKey(typeText)){ //Si le type de texte à une correspondance dans nos fichers
+			if(typeText.equals("Ps")){ //Cas des psaumes et de la numérotation Latine et Hébreux
+				int[] tmp = calculPsaumes(chapitre, verset);
+				chapitre = String.valueOf(tmp[0]);
+				verset = String.valueOf(tmp[1]);
+			}
 
-			case "Jn" :
+			if(typeText.equals("Obs")){ //Cas de l'obsecro te qui demande l'appel d'un autre méthode
+				
+				result = txtRecup.getObsecroTe(Integer.parseInt(chapitre)).getContenu();
 
-				result = txtRecup.getVersetBible("jean", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
+			}else{
 
-				break;
-
-			case "Lc" :
-			
-				result = txtRecup.getVersetBible("luc", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-
-				break;
-
-			case "Mt" :
-
-				result = txtRecup.getVersetBible("matthieu", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-			
-				break;
-
-			case "Mc" :
-
-				result = txtRecup.getVersetBible("marc", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-			
-				break;
-
-			/*case "Obs" :
-			
-				result = txtRecup.getVersetBible("psaumes", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-
-				break;*/
-
-			case "Ps" :
-
-				result = txtRecup.getVersetBible("psaumes", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-
-				break;
-
-			/*case "Sir" :
-
-				result = txtRecup.getVersetBible("psaumes", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-			
-				break;*/
-
-			case "Dan" :
-
-				result = txtRecup.getVersetBible("daniel", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-			
-				break;
-
-			case "Cant" :
-
-				result = txtRecup.getVersetBible("cantiques", Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
-			
-				break;
-
-			default :
-
-				result = txtRecup.getVersetParLongueur(100,50).getContenu();
-
-				break;
+			result = txtRecup.getVersetBible(abrChap.get(typeText), Integer.parseInt(chapitre), Integer.parseInt(verset)).getContenu();
+			}
+		}else {
+			result = txtRecup.getVersetParLongueur(textSize,15).getContenu();
 		}
 
 		return result;
@@ -310,10 +272,97 @@ class parserXML {
 
 	/***********************************************************************
 	Méthode de traduction des types de textes inscrit dans un livre d'heures
+	(Non terminé, mais possibilité d'utiliser soit des fichiers, soit une table clé/valeur)
 	***********************************************************************/
 	public String getHiTrad(String text){
-		return (" "+text+" ");
+		return (" "+text+" "); //Les espaces permettent d'éviter que le texte, une ajouté au corpus soit collé aux autres
 	}
 
+
+	/**************************************************************
+	Méthode qui créer une tablea clé valeur pour faire correspondre 
+	les abréviations de types de textes à leur nom complet
+	**************************************************************/
+	private Hashtable<String,String> genereHashtable(){
+		Hashtable<String,String> ht = new Hashtable<String,String>();
+		ht.put("Jn", "jean");
+		ht.put("Lc", "luc");
+		ht.put("Mt", "matthieu");
+		ht.put("Mc", "marc");
+		ht.put("Ps", "psaumes");
+		ht.put("Dan", "daniel");
+		ht.put("Cant", "cantiques");
+		ht.put("Sir", "siracide");
+		ht.put("Obs", "obsecroTe");
+
+		return ht;
+
+	}
+	/***************************************************************************************
+	Méthode qui calcule le bon chapitre et verset, passe de représentation latine à hébreuse
+	Les explications sont situés ici : http://www.interbible.org/interBible/decouverte/comprendre/2010/clb_100402.html
+	Le XML utilise la représentation latine et notre bible la représentation hébreuse
+	***************************************************************************************/
+
+	public int[] calculPsaumes(String chapitre, String verset){
+		int chap = Integer.parseInt(chapitre);
+		int vers = Integer.parseInt(verset);
+		int[] val = new int[2];// tableau pour retourner les deux valeurs
+
+		//Pour les chapitres de 10 à 112 et 116 à 145, la numérotasion augmente de 1
+		if((chap >= 10 && chap <= 112 )||(chap >= 116 && chap <= 145)){
+			chap++;
+		}else {
+			switch(chap){
+				//Le chapitre 9 en latin contient chapitre 9 et 10 en hébreux
+				case 9 : 
+
+					if(vers > 21){
+						chap++;
+						vers = vers-21;
+					}
+
+					break;
+				//Le chapitre 113 en latin contient le 114 et 115 en hébreux
+				case 113 :
+
+					if(vers > 8){
+						chap ++;
+						vers = vers-8;
+					}
+
+					break;
+				//Les chapitres 114 et 115 en latin sont contenus dans le 116 en hébreux
+				case 114 :
+				case 115 :
+
+					if(chap == 115){
+						vers = vers+9;
+					}
+
+					chap = 116;
+
+					break;
+				//Les chapitres 146 et 147 en latin sont contenus dans le 147 en hébreux
+				case 146 :
+				case 147 :
+
+					if(chap == 147){
+						vers = vers+11;
+					}
+
+					chap = 147;
+
+					break;
+
+
+			}
+		}
+
+		val[0] = chap;
+		val[1] = vers;
+
+		return val;
+	}
 }
 
