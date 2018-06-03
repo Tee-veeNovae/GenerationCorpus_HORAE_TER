@@ -44,6 +44,32 @@
 
 Utile pour la création des répertoires ainsi que l'appel de la méthode "getVersetBible" de RecupTexte. Voici les mots-clés acceptés :
 
+1-chroniques
+
+1-corinthiens
+
+1-jean
+
+1-machabees
+
+1-pierre
+
+1-rois
+
+1-samuel
+
+1-thessaloniciens
+
+1-timothee
+
+2-chroniques
+
+2-corinthiens
+
+2-jean
+
+2-machabees
+
 2-pierre
 
 2-rois
